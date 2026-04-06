@@ -1,0 +1,36 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      # Login to Azure
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      # Login to ACR
+      - name: Login to Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ fromJSON(secrets.AZURE_CREDENTIALS).clientId }}
+          password: ${{ fromJSON(secrets.AZURE_CREDENTIALS).clientSecret }}
+      
+      # Build and push
+      - name: Build and push Docker image
+        working-directory: day-03
+        run: |
+          docker build -t ${{ secrets.ACR_LOGIN_SERVER }}/day3-api:latest \
+                       -f Dockerfile .
+          docker push ${{ secrets.ACR_LOGIN_SERVER }}/day3-api:latest
+    
